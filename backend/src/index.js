@@ -136,14 +136,11 @@ app.post('/ask', async (req, res) => {
   try {
     const { question } = req.body
 
-    if (!question) {
-      return res.status(400).json({ error: 'No question provided' })
-    }
-
-    console.log('Incoming question:', question)
+    console.log('Incoming:', question)
+    console.log('API KEY:', process.env.OPENROUTER_API_KEY ? 'Present' : 'Missing')
 
     if (!process.env.OPENROUTER_API_KEY) {
-      return res.status(500).json({ error: 'API key missing in environment variables' })
+      return res.status(500).json({ error: 'API key missing' })
     }
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -153,11 +150,11 @@ app.post('/ask', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'mistralai/mistral-7b-instruct:free',
+        model: 'openchat/openchat-3.5-0106',
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful math tutor. Explain step-by-step in simple simple language.',
+            content: 'You are a helpful math tutor. Explain step-by-step in simple language.',
           },
           {
             role: 'user',
@@ -169,17 +166,21 @@ app.post('/ask', async (req, res) => {
 
     const data = await response.json()
 
-    if (!data || !data.choices) {
-      console.error('Invalid API response:', data)
-      return res.status(500).json({ error: 'Invalid AI response' })
+    console.log('FULL API RESPONSE:', data)
+
+    if (!response.ok) {
+      return res.status(500).json({
+        error: 'AI API failed',
+        details: data,
+      })
     }
 
-    const answer = data.choices[0].message.content
+    const answer = data?.choices?.[0]?.message?.content || 'No response'
 
     res.json({ answer })
-  } catch (error) {
-    console.error('AI ERROR:', error)
-    res.status(500).json({ error: 'AI request failed' })
+  } catch (err) {
+    console.error('SERVER ERROR:', err)
+    res.status(500).json({ error: 'Server error' })
   }
 })
 
