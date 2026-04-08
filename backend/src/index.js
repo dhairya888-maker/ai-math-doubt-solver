@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import fetch from 'node-fetch'
 import 'dotenv/config'
 
 const app = express()
@@ -10,6 +11,10 @@ app.use(express.json())
 app.get('/health', (_req, res) => {
   res.json({ ok: true })
 })
+
+if (process.env.OPENROUTER_API_KEY) {
+  console.log('API KEY PRESENT')
+}
 
 function mustString(x) {
   return typeof x === 'string' && x.trim().length > 0 ? x.trim() : null
@@ -131,15 +136,50 @@ app.post('/ask', async (req, res) => {
   try {
     const { question } = req.body
 
-    console.log('Incoming:', question)
+    if (!question) {
+      return res.status(400).json({ error: 'No question provided' })
+    }
 
-    // TEMP TEST RESPONSE
-    res.json({
-      answer: `Test working ✅ — you asked: ${question}`,
+    console.log('Incoming question:', question)
+
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: 'API key missing in environment variables' })
+    }
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'mistralai/mistral-7b-instruct:free',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful math tutor. Explain step-by-step in simple simple language.',
+          },
+          {
+            role: 'user',
+            content: question,
+          },
+        ],
+      }),
     })
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: 'Server error' })
+
+    const data = await response.json()
+
+    if (!data || !data.choices) {
+      console.error('Invalid API response:', data)
+      return res.status(500).json({ error: 'Invalid AI response' })
+    }
+
+    const answer = data.choices[0].message.content
+
+    res.json({ answer })
+  } catch (error) {
+    console.error('AI ERROR:', error)
+    res.status(500).json({ error: 'AI request failed' })
   }
 })
 
