@@ -129,6 +129,6 @@ After deploy, note your Render backend URL, e.g.:
 4. Deploy
 
 ## Live demo
-- Frontend: _(add your Vercel link here)_
-- Backend: _(add your Render link here)_
+- Frontend: _(https://ai-math-doubt-solver.vercel.app/)_
+- Backend: _(https://ai-math-doubt-solver-81jc.onrender.com)_
 
