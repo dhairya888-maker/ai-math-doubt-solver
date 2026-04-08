@@ -135,18 +135,19 @@ async function callGemini({ system, user }) {
 app.post('/ask', async (req, res) => {
   try {
     const { question } = req.body
+    const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY
 
     console.log('Incoming:', question)
-    console.log('API KEY:', process.env.OPENROUTER_API_KEY ? 'Present' : 'Missing')
+    console.log('API KEY:', apiKey ? 'Present' : 'Missing')
 
-    if (!process.env.OPENROUTER_API_KEY) {
+    if (!apiKey) {
       return res.status(500).json({ error: 'API key missing' })
     }
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -171,7 +172,7 @@ app.post('/ask', async (req, res) => {
     if (!response.ok) {
       return res.status(500).json({
         error: 'AI API failed',
-        details: data,
+        details: data?.error?.message || data,
       })
     }
 
