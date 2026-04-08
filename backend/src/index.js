@@ -128,37 +128,18 @@ async function callGemini({ system, user }) {
 }
 
 app.post('/ask', async (req, res) => {
-  const question = mustString(req.body?.question)
-  const action = mustString(req.body?.action) ?? 'solve'
-  const contextAnswer = mustString(req.body?.contextAnswer)
-
-  if (!question) return res.status(400).json({ error: 'Question is required.' })
-  if (!['solve', 'eli10', 'practice'].includes(action))
-    return res.status(400).json({ error: 'Invalid action.' })
-
-  const { system, user } = buildPrompt({ action, question, contextAnswer })
-
   try {
-    let answer
-    const provider = mustString(process.env.LLM_PROVIDER) // optional: "openai" | "gemini"
+    const { question } = req.body
 
-    if (provider === 'gemini') {
-      answer = await callGemini({ system, user })
-    } else if (provider === 'openai') {
-      answer = await callOpenAI({ system, user })
-    } else {
-      // default: try OpenAI first, then Gemini
-      try {
-        answer = await callOpenAI({ system, user })
-      } catch (e) {
-        answer = await callGemini({ system, user })
-      }
-    }
+    console.log('Incoming:', question)
 
-    return res.json({ answer })
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Unknown error'
-    return res.status(500).json({ error: msg })
+    // TEMP TEST RESPONSE
+    res.json({
+      answer: `Test working ✅ — you asked: ${question}`,
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
   }
 })
 
