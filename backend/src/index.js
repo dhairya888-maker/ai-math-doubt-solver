@@ -150,7 +150,7 @@ app.post('/ask', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openchat/openchat-3.5-0106',
+        model: 'openrouter/free',
         messages: [
           {
             role: 'system',
