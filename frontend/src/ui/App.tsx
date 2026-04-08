@@ -42,27 +42,22 @@ function writeRecentQuestions(items: string[]) {
 
 type AskAction = 'solve' | 'eli10' | 'practice'
 
-async function postAsk(payload: {
-  question: string
-  action: AskAction
-  contextAnswer?: string
-}): Promise<{ answer: string }> {
-  const res = await fetch(
-    `${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'}/ask`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    },
-  )
+async function askQuestion(question: string) {
+  const API_URL = 'https://ai-math-doubt-solver-81jc.onrender.com'
 
-  const data = (await res.json().catch(() => null)) as null | { answer?: string; error?: string }
+  const res = await fetch(`${API_URL}/ask`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ question }),
+  })
+
   if (!res.ok) {
-    const msg = data?.error || `Request failed (${res.status})`
-    throw new Error(msg)
+    throw new Error('API request failed')
   }
-  if (!data?.answer) throw new Error('Empty response from server')
-  return { answer: data.answer }
+
+  return await res.json()
 }
 
 export function App() {
@@ -125,11 +120,11 @@ export function App() {
     }
 
     try {
-      const { answer } = await postAsk({
-        question: trimmed,
-        action,
-        contextAnswer: action === 'solve' ? undefined : lastAssistantAnswer || undefined,
-      })
+      const apiQuestion =
+        action === 'solve'
+          ? trimmed
+          : `${action === 'eli10' ? 'Explain like I am 10:' : 'Give me similar questions for:'} ${trimmed}\n\nPrevious answer:\n${lastAssistantAnswer}`
+      const { answer } = await askQuestion(apiQuestion)
       setMessages((prev) => [...prev, { id: newId(), role: 'assistant', content: answer }])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
